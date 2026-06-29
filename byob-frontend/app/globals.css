@@ -1,26 +1,255 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --byob-bg: #0b0f1a;
+  --byob-surface: #111827;
+  --byob-surface-alt: #1f2937;
+  --byob-border: #374151;
+  --byob-text: #f3f4f6;
+  --byob-muted: #9ca3af;
+  --byob-primary: #6366f1;
+  --byob-accent: #8b5cf6;
+  --byob-success: #22c55e;
+  --byob-danger: #ef4444;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--byob-bg);
+  color: var(--byob-text);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Layout shell */
+.byob-shell {
+  min-height: 100vh;
+  padding: 24px 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.byob-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--byob-border);
+  margin-bottom: 24px;
+}
+
+.byob-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.byob-logo {
+  font-size: 1.6rem;
+  color: var(--byob-primary);
+  background: rgba(99, 102, 241, 0.12);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+}
+
+.byob-brand h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.byob-brand p {
+  font-size: 0.85rem;
+  color: var(--byob-muted);
+}
+
+.byob-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--byob-muted);
+  padding: 6px 12px;
+  border: 1px solid var(--byob-border);
+  border-radius: 99px;
+}
+
+.byob-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--byob-danger);
+}
+
+.byob-status.is-online .byob-dot {
+  background: var(--byob-success);
+}
+
+.byob-banner {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+/* Grid + cards */
+.byob-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.byob-card {
+  background: var(--byob-surface);
+  border: 1px solid var(--byob-border);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.byob-card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--byob-text);
+}
+
+.byob-empty {
+  background: var(--byob-surface);
+  border: 1px dashed var(--byob-border);
+  border-radius: 14px;
+  padding: 40px;
+  text-align: center;
+}
+
+.byob-empty h2 {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+.byob-empty p {
+  color: var(--byob-muted);
+  font-size: 0.9rem;
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+.byob-empty code {
+  background: var(--byob-surface-alt);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.85em;
+}
+
+/* Table */
+.byob-table-wrap {
+  overflow-x: auto;
+}
+
+.byob-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.byob-table th,
+.byob-table td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--byob-border);
+}
+
+.byob-table th {
+  color: var(--byob-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+}
+
+/* Summary card */
+.byob-summary {
+  color: var(--byob-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.byob-metrics {
+  display: flex;
+  gap: 24px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.byob-metric {
+  display: flex;
+  flex-direction: column;
+}
+
+.byob-metric-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--byob-primary);
+}
+
+.byob-metric-label {
+  font-size: 0.75rem;
+  color: var(--byob-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Action panel */
+.byob-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.byob-action {
+  text-align: left;
+  background: var(--byob-surface-alt);
+  border: 1px solid var(--byob-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: border-color 0.15s ease;
+}
+
+.byob-action:hover {
+  border-color: var(--byob-primary);
+}
+
+.byob-action-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.byob-action-desc {
+  font-size: 0.8rem;
+  color: var(--byob-muted);
+}
+
+.byob-widget-error {
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.byob-widget-error p {
+  font-size: 0.85rem;
+  margin-top: 6px;
+  color: var(--byob-muted);
 }
