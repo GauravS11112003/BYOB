@@ -1,0 +1,25 @@
+# BYOB backend configuration.
+# Declare your data sources and AI provider here.
+
+server:
+  addr: ":8080"
+
+connectors:
+  # Poll a REST endpoint every 5 seconds.
+  - type: rest
+    name: metrics
+    url: https://api.example.com/metrics
+    poll_interval: 5s
+
+  # Consume a Kafka topic.
+  # - type: kafka
+  #   name: orders
+  #   brokers: ["localhost:9092"]
+  #   topic: orders
+  #   group_id: byob
+
+ai:
+  provider: openai
+  model: gpt-4o
+  api_key_env: OPENAI_API_KEY
+  # base_url: https://api.openai.com/v1   # override for custom/compatible endpoints
