@@ -27,6 +27,7 @@ export function useVisualizeAction() {
         required: true,
       },
     ],
+    handler: async () => "Chart rendered.",
     render: ({ args }) => {
       const { title, chartType, xKey, yKey, data } = args as {
         title?: string;

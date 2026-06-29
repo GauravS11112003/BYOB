@@ -20,6 +20,7 @@ export function useSuggestActionsAction() {
         required: true,
       },
     ],
+    handler: async () => "Actions rendered.",
     render: ({ args }) => {
       const { title, actions } = args as {
         title?: string;

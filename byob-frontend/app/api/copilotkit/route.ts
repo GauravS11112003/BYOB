@@ -10,13 +10,16 @@ import { NextRequest } from "next/server";
 // here in a Next.js route. The Go backend owns the data plane (SSE stream +
 // connectors); this route owns chat + tool-calling for generative UI.
 //
-// The runtime and adapter are created lazily per request so a missing API key
-// surfaces as a request-time error rather than breaking the build.
+// The OpenAI client is created per request. When OPENAI_API_KEY is missing we
+// still construct the client with a placeholder so CopilotKit's runtime-info
+// request (fired on page load) succeeds — only an actual chat completion will
+// fail, surfaced cleanly in the chat UI rather than breaking the whole app.
 
 const runtime = new CopilotRuntime();
 
 export const POST = async (req: NextRequest) => {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const apiKey = process.env.OPENAI_API_KEY ?? "missing-api-key";
+  const openai = new OpenAI({ apiKey });
   const serviceAdapter = new OpenAIAdapter({
     openai,
     model: process.env.OPENAI_MODEL ?? "gpt-4o",

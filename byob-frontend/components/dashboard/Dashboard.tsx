@@ -10,13 +10,16 @@ import { ChartWidget } from "@/components/generative/ChartWidget";
 import { DataTable } from "@/components/generative/DataTable";
 import { WidgetBoundary } from "@/components/generative/WidgetBoundary";
 
+function num(v: unknown): number {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export default function Dashboard() {
   const { records, connected, error } = useDataStream();
 
-  // Register all generative UI actions so the AI can render charts/tables/etc.
   useByobActions();
 
-  // Expose the latest data to the AI as readable context.
   const recentData = useMemo(() => records.slice(-50), [records]);
   useCopilotReadable({
     description:
@@ -24,77 +27,160 @@ export default function Dashboard() {
     value: recentData,
   });
 
-  // Derive columns for the live table from the most recent record.
-  const columns = useMemo(() => {
+  // KPIs derived from the live stream.
+  const kpis = useMemo(() => {
+    const window = records.slice(-100);
+    const totalRequests = window.reduce((s, r) => s + num(r.data.requests), 0);
+    const totalErrors = window.reduce((s, r) => s + num(r.data.errors), 0);
+    const avgLatency =
+      window.length > 0
+        ? Math.round(
+            window.reduce((s, r) => s + num(r.data.latencyMs), 0) / window.length
+          )
+        : 0;
+    const regions = new Set(window.map((r) => String(r.data.region ?? r.source)));
+    const errorRate =
+      totalRequests > 0
+        ? ((totalErrors / totalRequests) * 100).toFixed(1)
+        : "0.0";
+    return {
+      totalRequests,
+      avgLatency,
+      errorRate,
+      regions: regions.size,
+      events: records.length,
+    };
+  }, [records]);
+
+  // Time-series for the main chart (requests + latency over recent events).
+  const timeSeries = useMemo(
+    () =>
+      records.slice(-24).map((r, i) => ({
+        t: new Date(r.timestamp).toLocaleTimeString([], {
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+        requests: num(r.data.requests),
+        latencyMs: num(r.data.latencyMs),
+        i,
+      })),
+    [records]
+  );
+
+  // Aggregate requests by region for the breakdown chart.
+  const byRegion = useMemo(() => {
+    const agg: Record<string, number> = {};
+    for (const r of records.slice(-100)) {
+      const region = String(r.data.region ?? r.source);
+      agg[region] = (agg[region] ?? 0) + num(r.data.requests);
+    }
+    return Object.entries(agg)
+      .map(([region, requests]) => ({ region, requests }))
+      .sort((a, b) => b.requests - a.requests);
+  }, [records]);
+
+  const tableColumns = useMemo(() => {
     const last = records[records.length - 1];
     return last ? Object.keys(last.data) : [];
   }, [records]);
 
-  const tableRows = useMemo(
-    () => records.slice(-8).map((r) => r.data),
-    [records]
-  );
+  const tableRows = useMemo(() => records.slice(-6).map((r) => r.data), [records]);
 
-  // A simple live chart: count of records per source over the recent window.
-  const chartData = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const r of records.slice(-100)) {
-      counts[r.source] = (counts[r.source] ?? 0) + 1;
-    }
-    return Object.entries(counts).map(([source, count]) => ({ source, count }));
-  }, [records]);
+  const hasData = records.length > 0;
 
   return (
-    <main className="byob-shell">
-      <header className="byob-header">
-        <div className="byob-brand">
-          <span className="byob-logo">◆</span>
-          <div>
-            <h1>{brand.name}</h1>
-            <p>{brand.tagline}</p>
+    <div className="byob-layout">
+      <main className="byob-shell">
+        <header className="byob-header">
+          <div className="byob-brand">
+            <span className="byob-logo">◆</span>
+            <div>
+              <h1>{brand.name}</h1>
+              <p>{brand.tagline}</p>
+            </div>
           </div>
-        </div>
-        <div className={`byob-status ${connected ? "is-online" : "is-offline"}`}>
-          <span className="byob-dot" />
-          {connected ? "Backend connected" : "Backend offline"}
-        </div>
-      </header>
+          <div className={`byob-status ${connected ? "is-online" : "is-offline"}`}>
+            <span className="byob-dot" />
+            {connected ? "Live" : "Offline"}
+          </div>
+        </header>
 
-      {error && <div className="byob-banner">{error}</div>}
+        {error && <div className="byob-banner">{error}</div>}
 
-      <section className="byob-grid">
-        {records.length === 0 ? (
+        {!hasData ? (
           <div className="byob-empty">
-            <h2>No data yet</h2>
+            <h2>Waiting for data…</h2>
             <p>
               Start the Go backend and configure a connector in{" "}
-              <code>byob-backend/config.yaml</code>. Records will stream in here,
+              <code>byob-backend/config.yaml</code>. Records will stream in here
               and you can ask the assistant to visualize them.
             </p>
           </div>
         ) : (
           <>
-            <WidgetBoundary>
-              <ChartWidget
-                title="Records by source (live)"
-                type="bar"
-                xKey="source"
-                yKey="count"
-                data={chartData}
-              />
-            </WidgetBoundary>
-            <WidgetBoundary>
-              <DataTable
-                title="Latest records"
-                columns={columns}
-                rows={tableRows}
-              />
-            </WidgetBoundary>
+            <section className="byob-kpis">
+              <Kpi label="Total requests" value={kpis.totalRequests.toLocaleString()} accent="primary" />
+              <Kpi label="Avg latency" value={`${kpis.avgLatency} ms`} accent="accent" />
+              <Kpi label="Error rate" value={`${kpis.errorRate}%`} accent={Number(kpis.errorRate) > 5 ? "danger" : "success"} />
+              <Kpi label="Regions" value={String(kpis.regions)} accent="muted" />
+              <Kpi label="Events" value={kpis.events.toLocaleString()} accent="muted" />
+            </section>
+
+            <section className="byob-grid">
+              <div className="byob-col-2">
+                <WidgetBoundary>
+                  <ChartWidget
+                    title="Requests over time"
+                    type="line"
+                    xKey="t"
+                    yKey="requests"
+                    data={timeSeries}
+                  />
+                </WidgetBoundary>
+              </div>
+              <div className="byob-col-1">
+                <WidgetBoundary>
+                  <ChartWidget
+                    title="Requests by region"
+                    type="bar"
+                    xKey="region"
+                    yKey="requests"
+                    data={byRegion}
+                  />
+                </WidgetBoundary>
+              </div>
+              <div className="byob-col-3">
+                <WidgetBoundary>
+                  <DataTable
+                    title="Latest records"
+                    columns={tableColumns}
+                    rows={tableRows}
+                  />
+                </WidgetBoundary>
+              </div>
+            </section>
           </>
         )}
-      </section>
+      </main>
 
       <ByobChat />
-    </main>
+    </div>
+  );
+}
+
+function Kpi({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent: "primary" | "accent" | "success" | "danger" | "muted";
+}) {
+  return (
+    <div className={`byob-kpi accent-${accent}`}>
+      <span className="byob-kpi-value">{value}</span>
+      <span className="byob-kpi-label">{label}</span>
+    </div>
   );
 }

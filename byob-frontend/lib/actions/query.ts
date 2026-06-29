@@ -26,6 +26,7 @@ export function useTableAction() {
         required: true,
       },
     ],
+    handler: async () => "Table rendered.",
     render: ({ args }) => {
       const { title, columns, rows } = args as {
         title?: string;
@@ -56,6 +57,7 @@ export function useSummarizeAction() {
         required: false,
       },
     ],
+    handler: async () => "Summary rendered.",
     render: ({ args }) => {
       const { title, summary, metrics } = args as {
         title?: string;
