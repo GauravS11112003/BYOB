@@ -1,0 +1,18 @@
+# Local development config. Run the mock data source first:
+#   go run ./examples/mockdata
+# Then run the server:
+#   go run ./cmd/server -config config.local.yaml
+
+server:
+  addr: ":8080"
+
+connectors:
+  - type: rest
+    name: metrics
+    url: http://localhost:7070/metrics
+    poll_interval: 2s
+
+ai:
+  provider: openai
+  model: gpt-4o
+  api_key_env: OPENAI_API_KEY
